@@ -10,7 +10,7 @@ mp_pose = mp.solutions.pose
 mp_drawing = mp.solutions.drawing_utils
 
 # 初始化OpenCV影像讀取
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(r"C:\testAI\class0418\Jumping Jacks.mp4")
 
 
 # 二維角度計算
@@ -30,11 +30,14 @@ def calculateAngle(landmark1, landmark2, landmark3):
     return angle
 
 
+counter = 0
+stage = None
+
 while True:
     # 讀取影像幀
     ret, image = cap.read()
-
-    results = pose.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+    img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    results = pose.process(img)
 
     # 檢測到人體姿勢時，取得左手肘、右手肘和肩部的關鍵點座標
     if results.pose_landmarks:
@@ -63,7 +66,7 @@ while True:
                 (
                     int(landmark.x * width),
                     int(landmark.y * height),
-                    (landmark.z * width),
+                    (landmark.z * 0),
                 )
             )
         l_elbow = calculateAngle(
@@ -212,12 +215,43 @@ while True:
             2,
             cv2.LINE_AA,
         )
+        if l_shoulder < 50 and r_shoulder < 50 and l_hip > 170 and r_hip > 170:
+            stage = "down"
+        if (
+            l_shoulder > 140
+            and r_shoulder > 140
+            and l_hip < 165
+            and r_hip < 165
+            and stage == "down"
+        ):
+            stage = "up"
+            counter += 1
+        cv2.putText(
+            image,
+            str(counter),
+            (10, 60),
+            cv2.FONT_HERSHEY_COMPLEX,
+            2,
+            (0, 0, 0),
+            2,
+            cv2.LINE_AA,
+        )
+        cv2.putText(
+            image,
+            stage,
+            (85, 60),
+            cv2.FONT_HERSHEY_COMPLEX,
+            2,
+            (0, 0, 0),
+            2,
+            cv2.LINE_AA,
+        )
 
     # 顯示標記了角度的影像幀
     cv2.imshow("MediaPipe Pose", image)
 
     # 按下ESC鍵退出
-    if cv2.waitKey(1) == 27:
+    if cv2.waitKey(10) == 27:
         break
 
 cap.release()
